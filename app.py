@@ -15,10 +15,17 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     try:
         title_font = ImageFont.truetype("Montserrat-Bold.ttf", 36)
         text_font = ImageFont.truetype("Roboto-Regular.ttf", 18)
-    except IOError:
-        st.warning("Custom fonts not found, using default system fonts.")
-        title_font = ImageFont.truetype("arial.ttf", 36)
-        text_font = ImageFont.truetype("arial.ttf", 18)
+    except:
+        try:
+        # Fallback to DejaVuSans (commonly available on Linux)
+            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
+            text_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+        except:
+        # Final fallback to default PIL font
+            st.warning("Custom and system fonts not found. Using default font.")
+            title_font = ImageFont.load_default()
+            text_font = ImageFont.load_default()
+
 
     # Paste logo with white overlay
     if logo:
