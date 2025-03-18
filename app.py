@@ -4,27 +4,31 @@ import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
+from datetime import date
 
-def create_id_card(name, father_name, student_id, roll_no, student_class, shift, photo, border_color, text_color, logo, school_name, issue_date="", expiry_date=""):
+def create_id_card(name, father_name, student_id, roll_no, student_class, shift, photo, border_color, text_color, logo, school_name, school_contact, issue_date="", expiry_date=""):
     width, height = 650, 400
     background = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(background)
 
+    # Load Fonts with Fallback
     try:
         title_font = ImageFont.truetype("Montserrat-Bold.ttf", 36)
         text_font = ImageFont.truetype("Roboto-Regular.ttf", 18)
-    except:
+    except IOError:
+        st.warning("Custom fonts not found, using default system fonts.")
         title_font = ImageFont.truetype("arial.ttf", 36)
         text_font = ImageFont.truetype("arial.ttf", 18)
 
-    # Paste logo and apply white overlay instead of blur
+    # Paste logo with white overlay
     if logo:
-        logo_img = Image.open(logo).convert("RGBA").resize((500, 300))
-        background.paste(logo_img, ((width - 500) // 2, (height - 300) // 2), logo_img)
-
-        # White overlay
-        overlay = Image.new('RGBA', (500, 300), (255, 255, 255, 220))  # Adjust alpha (220 = semi-transparent)
-        background.paste(overlay, ((width - 500) // 2, (height - 300) // 2), overlay)
+        try:
+            logo_img = Image.open(logo).convert("RGBA").resize((500, 300))
+            background.paste(logo_img, ((width - 500) // 2, (height - 300) // 2), logo_img)
+            overlay = Image.new('RGBA', (500, 300), (255, 255, 255, 220))
+            background.paste(overlay, ((width - 500) // 2, (height - 300) // 2), overlay)
+        except:
+            st.warning("Logo file is not a valid image.")
 
     # Multi-line school name
     max_school_name_width = width - 100
@@ -46,12 +50,16 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
         draw.text(((width - line_width) // 2, y_text), line, fill=border_color, font=title_font)
         y_text += 40
 
+    # School Contact Info (Optional)
+    if school_contact:
+        draw.text((50, y_text), f"Contact: {school_contact}", fill=text_color, font=text_font)
+        y_text += 30
+
     # Outer border
     draw.rounded_rectangle([(10, 10), (width - 10, height - 10)], outline=border_color, width=5, radius=20)
 
-    # Student Details (Shift & Issue Date joined without unnecessary space)
-    details_start_y = y_text + 10
-    y_pos = details_start_y
+    # Student Details
+    y_pos = y_text + 10
     draw.text((50, y_pos), f"Name: {name}", fill=text_color, font=text_font)
     y_pos += 30
     draw.text((50, y_pos), f"Father Name: {father_name}", fill=text_color, font=text_font)
@@ -65,22 +73,24 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     draw.text((50, y_pos), f"Shift: {shift}", fill=text_color, font=text_font)
     y_pos += 30
 
-    # Dates come right after shift without extra space
     if issue_date:
         draw.text((50, y_pos), f"Issue Date: {issue_date}", fill=text_color, font=text_font)
         y_pos += 30
     if expiry_date:
         draw.text((50, y_pos), f"Expiry Date: {expiry_date}", fill=text_color, font=text_font)
 
-    # Photo Section
+    # Photo Section with validation
     if photo:
-        img = Image.open(photo).resize((140, 160)).convert("RGBA")
-        mask = Image.new("L", (140, 160), 0)
-        draw_mask = ImageDraw.Draw(mask)
-        draw_mask.ellipse((0, 0, 140, 160), fill=255)
-        img.putalpha(mask)
-        background.paste(img, (480, 100), img)
-        draw.rounded_rectangle((480, 100, 620, 260), outline=border_color, width=4, radius=12)
+        try:
+            img = Image.open(photo).resize((140, 160)).convert("RGBA")
+            mask = Image.new("L", (140, 160), 0)
+            draw_mask = ImageDraw.Draw(mask)
+            draw_mask.ellipse((0, 0, 140, 160), fill=255)
+            img.putalpha(mask)
+            background.paste(img, (480, 100), img)
+            draw.rounded_rectangle((480, 100, 620, 260), outline=border_color, width=4, radius=12)
+        except:
+            st.warning("Student photo is not a valid image.")
 
     # Authorized signature
     authorized_signature_text = "Authorized Signature"
@@ -115,8 +125,9 @@ def main():
         st.header("🎨 Customize")
         border_color = st.color_picker("📝 Border Color", "#003366")
         text_color = st.color_picker("📝 Text Color", "#000000")
-        logo = st.file_uploader("📷 Upload Logo", type=["jpg", "png"])
+        logo = st.file_uploader("📷 Upload School Logo", type=["jpg", "png"])
         school_name = st.text_input("🏫 School Name")
+        school_contact = st.text_input("📞 School Contact (Optional)")
 
     col1, col2 = st.columns(2)
 
@@ -127,26 +138,35 @@ def main():
         roll_no = st.text_input("🔢 Roll No")
         student_class = st.text_input("📚 Class")
         shift = st.text_input("⏳ Shift")
-        issue_date = st.text_input("📅 Issue Date (Optional)", placeholder="e.g., 01-01-2025")
-        expiry_date = st.text_input("📅 Expiry Date (Optional)", placeholder="e.g., 01-01-2026")
+        issue_date = st.date_input("📅 Issue Date (Optional)", value=date.today())
+        expiry_date = st.date_input("📅 Expiry Date (Optional)", value=date.today())
         photo = st.file_uploader("📷 Upload Student Photo", type=["jpg", "png"])
 
     with col2:
         st.subheader("📞 ID Card Preview")
-        st.info("ℹ️ Fill in the details and click 'Generate ID Card' to see the preview and download options.")
+        st.info("ℹ️ Fill the details and click 'Generate ID Card' to preview and download.")
 
-    if st.button("✅ Generate ID Card"):
+    generate = st.button("✅ Generate ID Card")
+    reset = st.button("🔄 Reset Form")
+
+    if generate:
         if all([name, father_name, student_id, roll_no, student_class, shift, photo, school_name]):
-            id_card = create_id_card(name, father_name, student_id, roll_no, student_class, shift, 
-                                     photo, border_color, text_color, logo, school_name, issue_date, expiry_date)
-            col2.image(id_card, caption="🔍 Preview", use_column_width=True)
+            id_card = create_id_card(
+                name, father_name, student_id, roll_no, student_class, shift,
+                photo, border_color, text_color, logo, school_name, school_contact,
+                issue_date.strftime("%d-%m-%Y"), expiry_date.strftime("%d-%m-%Y")
+            )
+            col2.image(id_card, caption="🔍 Preview", use_container_width=True)
             pdf_file = create_pdf(id_card)
             buf_card = io.BytesIO()
             id_card.save(buf_card, format="PNG")
-            col2.download_button("📅 Download ID Card", buf_card.getvalue(), "id_card.png", "image/png")
-            col2.download_button("📅 Download PDF", pdf_file.getvalue(), "id_card.pdf", "application/pdf")
+            col2.download_button("📥 Download ID Card (PNG)", buf_card.getvalue(), "id_card.png", "image/png")
+            col2.download_button("📥 Download PDF", pdf_file.getvalue(), "id_card.pdf", "application/pdf")
         else:
-            st.warning("⚠️ Please fill in all required fields and upload images to generate the ID card.")
+            st.warning("⚠️ Please fill all required fields and upload images to generate the ID card.")
+
+    if reset:
+        st.experimental_rerun()
 
 
 if __name__ == "__main__":
