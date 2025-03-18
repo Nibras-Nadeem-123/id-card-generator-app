@@ -6,23 +6,23 @@ from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from datetime import date
 
-def create_id_card(name, father_name, student_id, roll_no, student_class, shift, photo, border_color, text_color, logo, school_name, school_contact, issue_date="", expiry_date=""):
+def load_font(font_path, size):
+    try:
+        return ImageFont.truetype(font_path, size)
+    except:
+        return None
+
+def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
+                   photo, border_color, text_color, logo, school_name, school_contact,
+                   issue_date="", expiry_date=""):
+
     width, height = 650, 400
     background = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(background)
 
-    # Fonts Handling with Fallbacks
-    try:
-        title_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
-        text_font = ImageFont.truetype("fonts/Roboto-Regular.ttf", 24)
-    except:
-        try:
-            title_font = ImageFont.truetype("arialbd.ttf", 34)
-            text_font = ImageFont.truetype("arial.ttf", 24)
-        except:
-            st.warning("Default font loaded.")
-            title_font = ImageFont.load_default()
-            text_font = ImageFont.load_default()
+    # Font loading with proper fallback
+    title_font = load_font("fonts/Montserrat-Bold.ttf", 34) or load_font("arialbd.ttf", 34) or ImageFont.load_default()
+    text_font = load_font("fonts/Roboto-Regular.ttf", 24) or load_font("arial.ttf", 24) or ImageFont.load_default()
 
     # Logo and overlay
     if logo:
@@ -32,9 +32,9 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
             overlay = Image.new('RGBA', (500, 300), (255, 255, 255, 220))
             background.paste(overlay, ((width - 500) // 2, (height - 300) // 2), overlay)
         except:
-            st.warning("Invalid logo image.")
+            st.warning("Invalid logo image uploaded.")
 
-    # Dynamic School Name Multi-line
+    # Dynamic School Name
     max_width = width - 100
     words = school_name.split()
     school_lines, line = [], ""
@@ -87,7 +87,7 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
             background.paste(img, (500, 100), img)
             draw.rounded_rectangle((500, 100, 620, 240), outline=border_color, width=4, radius=12)
         except:
-            st.warning("Invalid student photo.")
+            st.warning("Invalid student photo uploaded.")
 
     # Authorized Signature
     auth_text = "Authorized Signature"
