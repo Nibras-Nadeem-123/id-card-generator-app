@@ -11,20 +11,20 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     background = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(background)
 
-    # Fonts Handling with Fallbacks (Reduced font sizes)
+    # Fonts Handling with Fallbacks
     try:
-        title_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 32)  # Reduced from 40
-        text_font = ImageFont.truetype("fonts/Roboto-Regular.ttf", 22)    # Reduced from 30
+        title_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 34)
+        text_font = ImageFont.truetype("fonts/Roboto-Regular.ttf", 24)
     except:
         try:
-            title_font = ImageFont.truetype("arialbd.ttf", 32)  # Reduced from 36
-            text_font = ImageFont.truetype("arial.ttf", 22)     # Reduced from 30
+            title_font = ImageFont.truetype("arialbd.ttf", 34)
+            text_font = ImageFont.truetype("arial.ttf", 24)
         except:
             st.warning("Default font loaded.")
             title_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
 
-    # Logo and white overlay
+    # Logo and overlay
     if logo:
         try:
             logo_img = Image.open(logo).convert("RGBA").resize((500, 300))
@@ -51,32 +51,31 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     for line in school_lines:
         line_width = draw.textlength(line, font=title_font)
         draw.text(((width - line_width) // 2, y_text), line, fill=border_color, font=title_font)
-        y_text += 40  # Adjusted spacing
+        y_text += 40
 
     # Outer Border
     draw.rounded_rectangle([(10, 10), (width - 10, height - 10)], outline=border_color, width=5, radius=20)
 
     # Student Details
     y_pos = y_text + 10
-    detail_gap = 30  # Reduced from 40
-    draw.text((50, y_pos), f"Name: {name}", fill=text_color, font=text_font)
-    y_pos += detail_gap
-    draw.text((50, y_pos), f"Father Name: {father_name}", fill=text_color, font=text_font)
-    y_pos += detail_gap
-    draw.text((50, y_pos), f"Student ID: {student_id}", fill=text_color, font=text_font)
-    y_pos += detail_gap
-    draw.text((50, y_pos), f"Roll No: {roll_no}", fill=text_color, font=text_font)
-    y_pos += detail_gap
-    draw.text((50, y_pos), f"Class: {student_class}", fill=text_color, font=text_font)
-    y_pos += detail_gap
-    draw.text((50, y_pos), f"Shift: {shift}", fill=text_color, font=text_font)
-    y_pos += detail_gap
+    detail_gap = 28
+    student_details = [
+        f"Name: {name}",
+        f"Father Name: {father_name}",
+        f"Student ID: {student_id}",
+        f"Roll No: {roll_no}",
+        f"Class: {student_class}",
+        f"Shift: {shift}"
+    ]
 
     if issue_date:
-        draw.text((50, y_pos), f"Issue Date: {issue_date}", fill=text_color, font=text_font)
-        y_pos += detail_gap
+        student_details.append(f"Issue Date: {issue_date}")
     if expiry_date:
-        draw.text((50, y_pos), f"Expiry Date: {expiry_date}", fill=text_color, font=text_font)
+        student_details.append(f"Expiry Date: {expiry_date}")
+
+    for detail in student_details:
+        draw.text((50, y_pos), detail, fill=text_color, font=text_font)
+        y_pos += detail_gap
 
     # Student Photo
     if photo:
