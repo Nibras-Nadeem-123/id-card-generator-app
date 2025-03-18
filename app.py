@@ -18,8 +18,8 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     except:
         try:
         # Fallback to DejaVuSans (commonly available on Linux)
-            title_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 36)
-            text_font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 18)
+            title_font = ImageFont.truetype("C:\\Windows\\Fonts\\arialbd.ttf", 36)
+            text_font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf"   , 18)
         except:
         # Final fallback to default PIL font
             st.warning("Custom and system fonts not found. Using default font.")
@@ -56,12 +56,7 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
         line_width = draw.textlength(line, font=title_font)
         draw.text(((width - line_width) // 2, y_text), line, fill=border_color, font=title_font)
         y_text += 40
-
-    # School Contact Info (Optional)
-    if school_contact:
-        draw.text((50, y_text), f"Contact: {school_contact}", fill=text_color, font=text_font)
-        y_text += 30
-
+ 
     # Outer border
     draw.rounded_rectangle([(10, 10), (width - 10, height - 10)], outline=border_color, width=5, radius=20)
 
@@ -104,6 +99,11 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     signature_text_width = draw.textlength(authorized_signature_text, font=text_font)
     draw.text((width - signature_text_width - 30, height - 50), authorized_signature_text, fill=text_color, font=text_font)
 
+    # School Contact Info below Authorized Signature
+    if school_contact:
+        contact_text = f"Contact: {school_contact}"
+        contact_text_width = draw.textlength(contact_text, font=text_font)
+        draw.text(((width - contact_text_width) // 2, height - 30), contact_text, fill=text_color, font=text_font)
     return background
 
 
