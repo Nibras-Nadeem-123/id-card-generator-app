@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont
 import io
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -11,23 +11,20 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     background = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(background)
 
-    # Load Fonts with Fallback
+    # Fonts Handling with Fallbacks (Reduced font sizes)
     try:
-        title_font = ImageFont.truetype("Montserrat-Bold.ttf", 36)
-        text_font = ImageFont.truetype("Roboto-Regular.ttf", 18)
+        title_font = ImageFont.truetype("fonts/Montserrat-Bold.ttf", 32)  # Reduced from 40
+        text_font = ImageFont.truetype("fonts/Roboto-Regular.ttf", 22)    # Reduced from 30
     except:
         try:
-        # Fallback to DejaVuSans (commonly available on Linux)
-            title_font = ImageFont.truetype("C:\\Windows\\Fonts\\arialbd.ttf", 36)
-            text_font = ImageFont.truetype("C:\\Windows\\Fonts\\arial.ttf"   , 18)
+            title_font = ImageFont.truetype("arialbd.ttf", 32)  # Reduced from 36
+            text_font = ImageFont.truetype("arial.ttf", 22)     # Reduced from 30
         except:
-        # Final fallback to default PIL font
-            st.warning("Custom and system fonts not found. Using default font.")
+            st.warning("Default font loaded.")
             title_font = ImageFont.load_default()
             text_font = ImageFont.load_default()
 
-
-    # Paste logo with white overlay
+    # Logo and white overlay
     if logo:
         try:
             logo_img = Image.open(logo).convert("RGBA").resize((500, 300))
@@ -35,16 +32,15 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
             overlay = Image.new('RGBA', (500, 300), (255, 255, 255, 220))
             background.paste(overlay, ((width - 500) // 2, (height - 300) // 2), overlay)
         except:
-            st.warning("Logo file is not a valid image.")
+            st.warning("Invalid logo image.")
 
-    # Multi-line school name
-    max_school_name_width = width - 100
-    school_lines = []
+    # Dynamic School Name Multi-line
+    max_width = width - 100
     words = school_name.split()
-    line = ""
+    school_lines, line = [], ""
     for word in words:
         test_line = f"{line} {word}".strip()
-        if draw.textlength(test_line, font=title_font) <= max_school_name_width:
+        if draw.textlength(test_line, font=title_font) <= max_width:
             line = test_line
         else:
             school_lines.append(line)
@@ -55,55 +51,56 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
     for line in school_lines:
         line_width = draw.textlength(line, font=title_font)
         draw.text(((width - line_width) // 2, y_text), line, fill=border_color, font=title_font)
-        y_text += 40
- 
-    # Outer border
+        y_text += 40  # Adjusted spacing
+
+    # Outer Border
     draw.rounded_rectangle([(10, 10), (width - 10, height - 10)], outline=border_color, width=5, radius=20)
 
     # Student Details
     y_pos = y_text + 10
+    detail_gap = 30  # Reduced from 40
     draw.text((50, y_pos), f"Name: {name}", fill=text_color, font=text_font)
-    y_pos += 30
+    y_pos += detail_gap
     draw.text((50, y_pos), f"Father Name: {father_name}", fill=text_color, font=text_font)
-    y_pos += 30
+    y_pos += detail_gap
     draw.text((50, y_pos), f"Student ID: {student_id}", fill=text_color, font=text_font)
-    y_pos += 30
+    y_pos += detail_gap
     draw.text((50, y_pos), f"Roll No: {roll_no}", fill=text_color, font=text_font)
-    y_pos += 30
+    y_pos += detail_gap
     draw.text((50, y_pos), f"Class: {student_class}", fill=text_color, font=text_font)
-    y_pos += 30
+    y_pos += detail_gap
     draw.text((50, y_pos), f"Shift: {shift}", fill=text_color, font=text_font)
-    y_pos += 30
+    y_pos += detail_gap
 
     if issue_date:
         draw.text((50, y_pos), f"Issue Date: {issue_date}", fill=text_color, font=text_font)
-        y_pos += 30
+        y_pos += detail_gap
     if expiry_date:
         draw.text((50, y_pos), f"Expiry Date: {expiry_date}", fill=text_color, font=text_font)
 
-    # Photo Section with validation
+    # Student Photo
     if photo:
         try:
-            img = Image.open(photo).resize((140, 160)).convert("RGBA")
-            mask = Image.new("L", (140, 160), 0)
-            draw_mask = ImageDraw.Draw(mask)
-            draw_mask.ellipse((0, 0, 140, 160), fill=255)
+            img = Image.open(photo).resize((120, 140)).convert("RGBA")
+            mask = Image.new("L", (120, 140), 0)
+            ImageDraw.Draw(mask).ellipse((0, 0, 120, 140), fill=255)
             img.putalpha(mask)
-            background.paste(img, (480, 100), img)
-            draw.rounded_rectangle((480, 100, 620, 260), outline=border_color, width=4, radius=12)
+            background.paste(img, (500, 100), img)
+            draw.rounded_rectangle((500, 100, 620, 240), outline=border_color, width=4, radius=12)
         except:
-            st.warning("Student photo is not a valid image.")
+            st.warning("Invalid student photo.")
 
-    # Authorized signature
-    authorized_signature_text = "Authorized Signature"
-    signature_text_width = draw.textlength(authorized_signature_text, font=text_font)
-    draw.text((width - signature_text_width - 30, height - 50), authorized_signature_text, fill=text_color, font=text_font)
+    # Authorized Signature
+    auth_text = "Authorized Signature"
+    auth_width = draw.textlength(auth_text, font=text_font)
+    draw.text((width - auth_width - 30, height - 70), auth_text, fill=text_color, font=text_font)
 
-    # School Contact Info below Authorized Signature
+    # School Contact
     if school_contact:
         contact_text = f"Contact: {school_contact}"
-        contact_text_width = draw.textlength(contact_text, font=text_font)
-        draw.text(((width - contact_text_width) // 2, height - 30), contact_text, fill=text_color, font=text_font)
+        contact_width = draw.textlength(contact_text, font=text_font)
+        draw.text(((width - contact_width) // 2, height - 40), contact_text, fill=text_color, font=text_font)
+
     return background
 
 
@@ -123,10 +120,7 @@ def create_pdf(id_card):
 
 def main():
     st.set_page_config(page_title="ID Card Generator", layout="wide")
-
-    st.markdown("""
-        <h1 style='text-align: center; color: #003366;'>🎨 Digital School ID Generator</h1>
-    """, unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #003366;'>🎨 Digital School ID Generator</h1>", unsafe_allow_html=True)
 
     with st.sidebar:
         st.header("🎨 Customize")
