@@ -84,7 +84,7 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
         # Student photo open karo
             img = Image.open(photo).convert("RGBA")
 
-        # White background lagao agar image transparent ya black bg ho
+        # White background lagao agar image transparent ho ya black bg ho
             white_bg = Image.new("RGBA", img.size, (255, 255, 255, 255))
             white_bg.paste(img, (0, 0), img)
 
@@ -97,17 +97,15 @@ def create_id_card(name, father_name, student_id, roll_no, student_class, shift,
             paste_y = (140 - white_bg.height) // 2
             final_img.paste(white_bg, (paste_x, paste_y), white_bg)
 
-        # Mask for rounded image
-            mask = Image.new("L", (120, 140), 0)
-            ImageDraw.Draw(mask).ellipse((0, 0, 120, 140), fill=255)
-            final_img.putalpha(mask)
-
-        # Paste the final student photo
+        # Direct photo paste karo border ke andar (no round mask)
             background.paste(final_img, (500, 100), final_img)
-            draw.rounded_rectangle((500, 100, 620, 240), outline=border_color, width=4, radius=12)
+
+        # Rectangle border draw karo photo ke around
+            draw.rectangle((500, 100, 620, 240), outline=border_color, width=4)
 
         except Exception as e:
             st.warning(f"Invalid student photo uploaded: {e}")
+
 
 
     # Authorized Signature
